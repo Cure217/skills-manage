@@ -1,0 +1,7 @@
+interface:
+  display_name: "对话 HTML 总结"
+  short_description: "自动提炼当前对话重点并生成结构清晰、样式美观的 HTML 总结页"
+  default_prompt: "使用 $conversation-html-summary 总结今天所有 Codex 会话，并生成一个包含结论、时间线、文件线索和下一步的 HTML 日报页面。"
+
+policy:
+  allow_implicit_invocation: true

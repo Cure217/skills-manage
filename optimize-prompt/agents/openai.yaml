@@ -1,0 +1,4 @@
+interface:
+  display_name: "提示词优化"
+  short_description: "把原始提示词优化成更清晰、更强约束，且更适合 Codex / Claude Code 执行"
+  default_prompt: "使用 $optimize-prompt 把这段提示词优化成更适合 Codex / Claude Code 执行的版本，并给我优化版与修改说明。"

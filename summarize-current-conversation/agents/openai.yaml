@@ -1,0 +1,4 @@
+interface:
+  display_name: "对话总结"
+  short_description: "自动提炼当前对话的目标、结论、进度、待办、风险与下一步行动"
+  default_prompt: "使用 $summarize-current-conversation 总结当前对话，输出目标、关键结论、待办和下一步。"

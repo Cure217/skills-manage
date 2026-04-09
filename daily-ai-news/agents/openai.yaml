@@ -1,0 +1,7 @@
+interface:
+  display_name: "每日 AI 资讯"
+  short_description: "按今天、昨天、指定日期汇总 AI 资讯并输出中文结构化日报"
+  default_prompt: "使用 $daily-ai-news 汇总指定日期的 AI 资讯，并输出中文结构化日报。"
+
+policy:
+  allow_implicit_invocation: true
