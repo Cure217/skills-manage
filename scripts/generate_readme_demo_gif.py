@@ -43,6 +43,13 @@ SMALL_FONT = load_font(FONT_REGULAR, 16)
 CODE_FONT = load_font(FONT_CODE, 16)
 
 
+def count_skills() -> tuple[int, int, int]:
+    custom_count = sum(1 for child in ROOT.iterdir() if child.is_dir() and not child.name.startswith(".") and (child / "SKILL.md").exists())
+    system_root = ROOT / ".system"
+    system_count = sum(1 for child in system_root.iterdir() if child.is_dir() and (child / "SKILL.md").exists())
+    return custom_count + system_count, custom_count, system_count
+
+
 def draw_background() -> Image.Image:
     image = Image.new("RGB", (WIDTH, HEIGHT), BACKGROUND_TOP)
     draw = ImageDraw.Draw(image)
@@ -113,7 +120,8 @@ def code_panel(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int], title:
 def build_frame_overview() -> Image.Image:
     image = draw_background()
     draw = ImageDraw.Draw(image)
-    header(draw, "20 个自定义 Skills")
+    _, custom_count, _ = count_skills()
+    header(draw, f"{custom_count} 个自定义 Skills")
 
     card(
         draw,
@@ -150,17 +158,18 @@ def build_frame_overview() -> Image.Image:
 def build_frame_catalog() -> Image.Image:
     image = draw_background()
     draw = ImageDraw.Draw(image)
-    header(draw, "5 个系统 Skills 副本")
+    total_count, custom_count, system_count = count_skills()
+    header(draw, f"{system_count} 个系统 Skills 副本")
 
-    metric(draw, (70, 220, 310, 352), "25", "总技能数", PURPLE)
-    metric(draw, (350, 220, 590, 352), "20", "自定义 Skills", BLUE)
-    metric(draw, (630, 220, 870, 352), "5", "系统 Skills 副本", GREEN)
+    metric(draw, (70, 220, 310, 352), str(total_count), "总技能数", PURPLE)
+    metric(draw, (350, 220, 590, 352), str(custom_count), "自定义 Skills", BLUE)
+    metric(draw, (630, 220, 870, 352), str(system_count), "系统 Skills 副本", GREEN)
     metric(draw, (790, 404, 1030, 536), "8+", "主要能力方向", YELLOW)
 
     rounded_box(draw, (70, 404, 730, 566), fill=CARD, outline=LINE, width=1)
     write(draw, (98, 432), "覆盖方向", SECTION_FONT)
     lines = [
-        "信息整理：conversation-html-summary / summarize-current-conversation / optimize-prompt",
+        "信息整理：article-summary / conversation-html-summary / summarize-current-conversation / optimize-prompt",
         "内容抓取：daily-ai-news / bilibili-video-summary / speech-to-text",
         "文档办公：markdown-converter / docx / pdf / pptx / xlsx",
         "工程协作：code-review-cr / harness-engineering / webapp-testing / web-design-guidelines",

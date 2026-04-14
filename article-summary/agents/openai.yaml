@@ -1,0 +1,4 @@
+interface:
+  display_name: "Article Summary"
+  short_description: "总结文章、网页长文和本地文档，并输出摘要、要点或改写稿"
+  default_prompt: "Use $article-summary to summarize this article, extract key points and structure, and produce a readable Chinese summary."

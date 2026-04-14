@@ -7,8 +7,8 @@
   <p>
     <img src="https://img.shields.io/badge/status-active-10B981?style=flat-square" alt="Status" />
     <img src="https://img.shields.io/badge/workflow-git--managed-2563EB?style=flat-square" alt="Workflow" />
-    <img src="https://img.shields.io/badge/skills-25-7C3AED?style=flat-square" alt="Skills Count" />
-    <img src="https://img.shields.io/badge/custom-20-2563EB?style=flat-square" alt="Custom Skills" />
+    <img src="https://img.shields.io/badge/skills-26-7C3AED?style=flat-square" alt="Skills Count" />
+    <img src="https://img.shields.io/badge/custom-21-2563EB?style=flat-square" alt="Custom Skills" />
     <img src="https://img.shields.io/badge/system-5-10B981?style=flat-square" alt="System Skills" />
     <img src="https://img.shields.io/badge/platform-Codex%20CLI-111827?style=flat-square" alt="Platform" />
     <img src="https://img.shields.io/badge/license-mixed-lightgrey?style=flat-square" alt="License" />
@@ -43,7 +43,7 @@
 
 当前仓库包含：
 
-- `20` 个自定义 Skills
+- `21` 个自定义 Skills
 - `5` 个系统 Skills 副本
 - 多种参考资料、模板、脚本和目录约定
 - 一个适合继续扩展为开源项目的 README / 索引入口
@@ -86,6 +86,7 @@
 | 类别 | Skill | 用途简介 |
 | --- | --- | --- |
 | 浏览器自动化 | [`agent-browser`](agent-browser/) | 用浏览器自动化处理网页、表单、截图、采集与 UI 测试 |
+| 文章总结 | [`article-summary`](article-summary/) | 总结网页文章、公众号长文、博客、长文档，并输出摘要、要点或改写稿 |
 | Azure 成本 | [`azure-cost`](azure-cost/) | 查询 Azure 历史成本、做成本预测、分析浪费与优化空间 |
 | 视频内容理解 | [`bilibili-video-summary`](bilibili-video-summary/) | 提取 B 站视频公开元数据、字幕可用性、摘要和改写稿 |
 | 代码审查 | [`code-review-cr`](code-review-cr/) | 做 PR / MR / diff / 本地改动的代码评审与上线风险判断 |
@@ -209,6 +210,10 @@ git clone https://github.com/Cure217/skills-manage.git $env:USERPROFILE\.codex\s
 
 ```text
 使用 $summarize-current-conversation 把当前对话整理成一个可交接的 handoff。
+```
+
+```text
+使用 $article-summary 总结这篇文章，提炼核心观点、结构拆解、关键细节，并输出一版中文要点摘要。
 ```
 
 ### 信息采集
