@@ -5,8 +5,8 @@
   <p>集中管理、版本化同步、持续维护你的 Skills 目录，让常用工作流真正可复用、可迁移、可协作。</p>
 
   <p>
-    <img src="https://img.shields.io/github/last-commit/Cure217/skills-manage?style=flat-square" alt="Last Commit" />
-    <img src="https://img.shields.io/github/repo-size/Cure217/skills-manage?style=flat-square" alt="Repo Size" />
+    <img src="https://img.shields.io/badge/status-active-10B981?style=flat-square" alt="Status" />
+    <img src="https://img.shields.io/badge/workflow-git--managed-2563EB?style=flat-square" alt="Workflow" />
     <img src="https://img.shields.io/badge/skills-25-7C3AED?style=flat-square" alt="Skills Count" />
     <img src="https://img.shields.io/badge/custom-20-2563EB?style=flat-square" alt="Custom Skills" />
     <img src="https://img.shields.io/badge/system-5-10B981?style=flat-square" alt="System Skills" />
