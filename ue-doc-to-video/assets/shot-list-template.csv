@@ -1,0 +1,6 @@
+shot_id,chapter,goal,screen_action,ue_location,expected_result,notes
+S01,开场,展示最终效果,播放结果镜头,Sequencer/Viewport,用户快速理解本视频价值,建议 10~15 秒
+S02,环境准备,说明版本和素材,展示项目结构,Content Browser,用户知道前置条件,必要时插图
+S03,步骤1,进入操作入口,点击菜单或蓝图节点,Editor UI,进入目标页面,加鼠标高亮
+S04,步骤2,完成关键配置,修改参数或节点连接,Details/Blueprint,出现中间结果,强调关键字段
+S05,总结,回顾结果与下一步,展示前后对比,Viewport/Editor UI,用户知道本节完成了什么,可加字幕提示

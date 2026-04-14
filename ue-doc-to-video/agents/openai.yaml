@@ -1,0 +1,4 @@
+interface:
+  display_name: "UE Doc to Video"
+  short_description: "Turn docs into Unreal Engine tutorial video packages"
+  default_prompt: "Use $ue-doc-to-video to turn this documentation into a UE teaching video outline, shot list, voiceover, subtitles, and production checklist."
