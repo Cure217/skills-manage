@@ -359,6 +359,7 @@ def main() -> None:
     parser.add_argument("--sessions-root", default=r"C:\Users\yucohu\.codex\sessions", help="Root directory of Codex sessions.")
     parser.add_argument("--output-dir", default=r"D:\files\AI_output", help="Base output directory for dated results.")
     parser.add_argument("--list-dates", action="store_true", help="List all available session dates and exit.")
+    parser.add_argument("--open", action="store_true", help="Open the generated HTML with the system default app.")
     parser.add_argument("--theme", choices=sorted(render_summary_html.THEMES), default="dark", help="HTML theme.")
     args = parser.parse_args()
 
@@ -387,6 +388,8 @@ def main() -> None:
 
     print(html_path)
     print(json_path)
+    if args.open:
+        render_summary_html.open_output_file(html_path)
 
 
 if __name__ == "__main__":

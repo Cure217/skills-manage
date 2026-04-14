@@ -87,15 +87,17 @@ Guidelines:
 
 Prefer the bundled script for consistent output:
 
-`python scripts/render_summary_html.py --input summary.json --output conversation-summary.html`
+`python scripts/render_summary_html.py --input summary.json --output conversation-summary.html --open`
 
 If you want the default dated-directory behavior, omit `--output`:
 
-`python scripts/render_summary_html.py --input summary.json`
+`python scripts/render_summary_html.py --input summary.json --open`
 
 If you want the final JSON copied alongside the HTML even when you explicitly pass an output path:
 
-`python scripts/render_summary_html.py --input summary.json --output my-page.html --copy-input-json`
+`python scripts/render_summary_html.py --input summary.json --output my-page.html --copy-input-json --open`
+
+Unless the user explicitly asks not to, open the generated HTML after rendering so the result is immediately visible.
 
 If the user gave a destination path, use it.
 
@@ -109,14 +111,18 @@ If the user did not specify an output path, default to:
 
 Do not silently fall back to `C:\Users\yucohu` or the current working directory. If writing to `D:\files\AI_output\...` requires elevated permission, request it explicitly.
 
+If opening the HTML requires elevated permission, request it explicitly. If opening is blocked, do not claim success; instead report the output path and note that auto-open was not completed.
+
 ### 5. Hand off clearly
 
 When done:
 
+- Open the generated HTML unless the user asked not to
 - Tell the user where the HTML file was written
 - Tell the user where the final JSON file was written if one was produced
 - Briefly note the included sections
 - Mention if you made any scope assumptions
+- State whether auto-open succeeded or was blocked
 
 ## Day Summary Workflow: All Codex Sessions For A Date
 
@@ -144,14 +150,14 @@ Use this when the user asks for:
 
 Run:
 
-`python scripts/summarize_codex_day.py --date 2026-04-08`
+`python scripts/summarize_codex_day.py --date 2026-04-08 --open`
 
 Natural language-like date selectors also work:
 
-- `python scripts/summarize_codex_day.py --date today`
-- `python scripts/summarize_codex_day.py --date 今天`
-- `python scripts/summarize_codex_day.py --date yesterday`
-- `python scripts/summarize_codex_day.py --date latest`
+- `python scripts/summarize_codex_day.py --date today --open`
+- `python scripts/summarize_codex_day.py --date 今天 --open`
+- `python scripts/summarize_codex_day.py --date yesterday --open`
+- `python scripts/summarize_codex_day.py --date latest --open`
 
 If `--date` is omitted, it defaults to `today` / `今天`.
 If there are no sessions for today and `--date` is omitted, it automatically falls back to the latest available session date.
@@ -242,4 +248,4 @@ For most requests, this richer default set works better:
 1. 先写 `summary.json`
 2. 再运行：
 
-`python scripts/render_summary_html.py --input summary.json --output summary.html`
+`python scripts/render_summary_html.py --input summary.json --output summary.html --open`

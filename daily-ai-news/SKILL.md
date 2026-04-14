@@ -11,7 +11,7 @@ description: 汇总今天、昨天、指定日期、最近 N 天或日期区间�
 
 - 用户要看“今天 / 昨天 / 2026-04-08 的 AI 资讯”
 - 用户要生成“AI 日报 / AI 快报 / AI 资讯汇总”
-- 用户要求同时覆盖官方、开源、视频、社交等来源
+- 用户要求同时覆盖官方、开源、视频、社区等来源
 - 用户强调“不要伪造抓取成功”“按日期查询”“结构化输出”“单独分组低可信信息”
 
 ## 快速开始
@@ -93,14 +93,34 @@ py -3 scripts/ai_news_digest.py --preset today --format markdown --verbose
 - GitHub Trending
 - YouTube 频道 Feed / Handle 解析
 
-默认不硬编码死解释、而是保留为可配置别名的来源：
+## 站点别名约定
+
+以下别名在本 Skill 中按固定语义解释：
+
+- `B站` = `https://www.bilibili.com/`
+- `V站` = `https://www.v2ex.com/`
+- `L站` = `https://linux.do/`
+
+当前状态说明：
+
+- `B站`：默认未启用，但已支持两种接入：`custom_rss` 中转模式，或 `bilibili_up_videos` 指定 UP 主直连模式
+- `V站`：已启用，当前使用 `https://www.v2ex.com/feed/tab/tech.xml`
+- `L站`：已启用，当前使用 `https://linux.do/latest.rss`
+
+说明：
+
+- `B站` 当前支持两种方式：`custom_rss`（RSSHub / API 中转）与 `bilibili_up_videos`（指定 UP 主直连，推荐）
+- `B站` 的直连模式会先抓 UP 主公开视频列表，再调用公开视频详情接口补齐发布时间与简介
+- `V站` 和 `L站` 当前都走 RSS + AI 关键词过滤
+- 社区来源默认归入“行业热点/讨论”，不作为官方信源
+- 如需进一步提纯，可继续按节点、板块、专属 RSS 或指定 UP 主细分
+
+默认保留为可配置来源的还有：
 
 - `X(Twitter)`
 - `B站`
 - `V站`
 - `L站`
-
-这些来源默认会在结果里显示为“待配置 / 未启用”，除非你在 `references/sources.json` 中补充可维护的代理、RSS、API 或桥接地址。
 
 ## 输出要求
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Review CR"
+  short_description: "Review diffs, rank issues, and assess release risk"
+  default_prompt: "Use $code-review-cr to review this diff, prioritize findings, assess release risk, and draft Codex/Claude Code fix prompts."

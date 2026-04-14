@@ -15,6 +15,11 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path
 from urllib.parse import parse_qsl, urljoin, urlparse, urlunparse, urlencode
 
+try:
+    import requests
+except Exception:
+    requests = None
+
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
@@ -229,6 +234,27 @@ def curl_fetch(
     return completed.stdout.decode("utf-8", errors="replace")
 
 
+def requests_fetch(
+    url: str,
+    timeout_seconds: int,
+    user_agent: str,
+    headers: dict[str, str] | None = None,
+    insecure: bool = False,
+) -> str:
+    if requests is None:
+        raise FetchError("requests unavailable")
+    merged_headers = {"User-Agent": user_agent}
+    for key, value in (headers or {}).items():
+        merged_headers[str(key)] = str(value)
+    try:
+        response = requests.get(url, headers=merged_headers, timeout=timeout_seconds, verify=not insecure)
+        response.raise_for_status()
+        response.encoding = response.encoding or response.apparent_encoding or "utf-8"
+        return response.text
+    except Exception as exc:
+        raise FetchError(str(exc))
+
+
 def fetch_text(source: dict[str, object], defaults: dict[str, object]) -> str:
     timeout_seconds = int(defaults.get("request_timeout_seconds", 25))
     user_agent = str(defaults.get("user_agent", "daily-ai-news-skill/1.0"))
@@ -237,10 +263,17 @@ def fetch_text(source: dict[str, object], defaults: dict[str, object]) -> str:
     if not isinstance(url, str) or not url:
         raise FetchError("来源缺少 url。")
     try:
+        return requests_fetch(url, timeout_seconds, user_agent, headers=headers if isinstance(headers, dict) else None, insecure=False)
+    except FetchError:
+        pass
+    try:
         return curl_fetch(url, timeout_seconds, user_agent, headers=headers if isinstance(headers, dict) else None, insecure=False)
     except FetchError:
         if source.get("allow_insecure_tls"):
-            return curl_fetch(url, timeout_seconds, user_agent, headers=headers if isinstance(headers, dict) else None, insecure=True)
+            try:
+                return requests_fetch(url, timeout_seconds, user_agent, headers=headers if isinstance(headers, dict) else None, insecure=True)
+            except FetchError:
+                return curl_fetch(url, timeout_seconds, user_agent, headers=headers if isinstance(headers, dict) else None, insecure=True)
         raise
 
 
@@ -354,12 +387,12 @@ def section_for_item(item: dict[str, object]) -> str:
     title = normalize_title(str(item["title"]))
     if item["source_type"] == "open-source":
         return "开源项目/代码趋势"
+    if item["source_type"] in {"social", "video"}:
+        return "行业热点/讨论"
     if any(keyword in title for keyword in MODEL_KEYWORDS):
         return "重大模型/产品发布"
     if item["source_type"] == "official":
         return "官方公告/能力更新"
-    if item["source_type"] in {"social", "video"}:
-        return "行业热点/讨论"
     return str(item.get("section_bias") or "行业热点/讨论")
 
 
@@ -448,6 +481,174 @@ def create_item(
     return item
 
 
+def matches_source_keywords(source: dict[str, object], *parts: str) -> bool:
+    keywords = [str(keyword).lower() for keyword in source.get("ai_keywords", []) if str(keyword).strip()]
+    if not keywords:
+        return True
+    haystack = " ".join(clean_text(part) for part in parts if part).lower()
+    return any(keyword in haystack for keyword in keywords)
+
+
+def merge_headers(source: dict[str, object], extra: dict[str, str] | None = None) -> dict[str, str]:
+    merged: dict[str, str] = {}
+    for key, value in (source.get("headers") or {}).items():
+        merged[str(key)] = str(value)
+    for key, value in (extra or {}).items():
+        merged[str(key)] = str(value)
+    return merged
+
+
+def extract_json_assignment(document: str, marker: str) -> dict[str, object]:
+    marker_index = document.find(marker)
+    if marker_index < 0:
+        raise FetchError(f"未找到页面变量：{marker}")
+    cursor = marker_index + len(marker)
+    start = -1
+    depth = 0
+    in_string = False
+    escaped = False
+    for index in range(cursor, len(document)):
+        char = document[index]
+        if start < 0:
+            if char.isspace():
+                continue
+            if char != "{":
+                raise FetchError(f"{marker} 后不是 JSON 对象")
+            start = index
+            depth = 1
+            continue
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == "\"":
+                in_string = False
+            continue
+        if char == "\"":
+            in_string = True
+            continue
+        if char == "{":
+            depth += 1
+            continue
+        if char == "}":
+            depth -= 1
+            if depth == 0:
+                try:
+                    return json.loads(document[start : index + 1])
+                except json.JSONDecodeError as exc:
+                    raise FetchError(f"页面 JSON 解析失败：{exc}") from exc
+    raise FetchError(f"未完整解析 {marker} 对应的 JSON")
+
+
+def resolve_bilibili_mid(source: dict[str, object]) -> str:
+    mid = clean_text(str(source.get("mid") or ""))
+    if mid:
+        return mid
+    url = str(source.get("url") or "")
+    for pattern in (r"space\.bilibili\.com/(?P<mid>\d+)", r"www\.bilibili\.com/list/(?P<mid>\d+)"):
+        match = re.search(pattern, url)
+        if match:
+            return match.group("mid")
+    raise FetchError("B站来源缺少 mid，或 url 中无法解析 UP 主 mid")
+
+
+def fetch_bilibili_up_videos(source: dict[str, object], defaults: dict[str, object], window: dict[str, object], verbose: bool) -> list[dict[str, object]]:
+    mid = resolve_bilibili_mid(source)
+    max_items = int(source.get("max_items", defaults.get("max_items_per_source", 12)))
+    detail_fetch_limit = int(source.get("detail_fetch_limit", max(max_items * 4, max_items)))
+    list_url = str(source.get("list_url") or f"https://www.bilibili.com/list/{mid}?sort_field=pubdate")
+    list_headers = merge_headers(
+        source,
+        {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Referer": f"https://space.bilibili.com/{mid}/video",
+        },
+    )
+    list_source = {**source, "url": list_url, "headers": list_headers}
+    html_text = fetch_text(list_source, defaults)
+    page_state = extract_json_assignment(html_text, "window.__INITIAL_STATE__=")
+    resource_list = page_state.get("resourceList")
+    if not isinstance(resource_list, list) or not resource_list:
+        raise FetchError("未从 B站列表页解析到视频列表")
+
+    timezone = window["tzinfo"]
+    items: list[dict[str, object]] = []
+    detail_attempts = 0
+    detail_successes = 0
+    for resource in resource_list[:detail_fetch_limit]:
+        if not isinstance(resource, dict):
+            continue
+        bvid = clean_text(str(resource.get("bvid") or ""))
+        if not bvid:
+            continue
+        detail_attempts += 1
+        video_url = f"https://www.bilibili.com/video/{bvid}"
+        detail_source = {
+            **source,
+            "url": f"https://api.bilibili.com/x/web-interface/view?bvid={bvid}",
+            "headers": merge_headers(
+                source,
+                {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+                    "Accept": "application/json,text/plain,*/*",
+                    "Referer": video_url,
+                },
+            ),
+        }
+        try:
+            payload = json.loads(fetch_text(detail_source, defaults))
+        except (FetchError, json.JSONDecodeError) as exc:
+            log(verbose, f"{source.get('name')}: bilibili view failed for {bvid}: {exc}")
+            continue
+        data = payload.get("data")
+        if payload.get("code") != 0 or not isinstance(data, dict):
+            log(verbose, f"{source.get('name')}: bilibili view returned non-zero code for {bvid}: {payload.get('message')}")
+            continue
+        detail_successes += 1
+        title = clean_text(str(data.get("title") or resource.get("title") or ""))
+        description = clean_text(str(data.get("desc") or ""))
+        if not matches_source_keywords(source, title, description):
+            continue
+        published_dt: dt.datetime | None = None
+        precision = "unknown"
+        raw_date = ""
+        timestamp = data.get("pubdate") or data.get("ctime")
+        if isinstance(timestamp, (int, float)):
+            published_dt = dt.datetime.fromtimestamp(int(timestamp), timezone)
+            precision = "datetime"
+            raw_date = published_dt.isoformat()
+        else:
+            raw_date = clean_text(str(timestamp or ""))
+            published_dt, precision = parse_datetime(raw_date, timezone)
+        owner = data.get("owner") if isinstance(data.get("owner"), dict) else {}
+        summary_parts = [description, clean_text(str(resource.get("views") or ""))]
+        item = create_item(
+            source,
+            title=title,
+            url=video_url,
+            summary=" / ".join(part for part in summary_parts if part),
+            raw_date=raw_date,
+            published_at=published_dt,
+            date_precision=precision,
+            extra={
+                "author_name": owner.get("name"),
+                "author_mid": owner.get("mid"),
+                "bvid": bvid,
+                "view_count": data.get("stat", {}).get("view") if isinstance(data.get("stat"), dict) else None,
+                "content_category": "Bilibili Video",
+            },
+        )
+        if matches_window(item["published_dt"], precision, item["observed_dt"], window):
+            items.append(item)
+        if len(items) >= max_items:
+            break
+    if detail_attempts > 0 and detail_successes == 0:
+        raise FetchError("B站视频详情接口请求失败或返回受限")
+    return items
+
+
 def fetch_rss_items(source: dict[str, object], defaults: dict[str, object], window: dict[str, object], verbose: bool) -> list[dict[str, object]]:
     xml_text = fetch_text(source, defaults)
     root = ET.fromstring(xml_text)
@@ -463,6 +664,8 @@ def fetch_rss_items(source: dict[str, object], defaults: dict[str, object], wind
             link = raw_item.findtext("link") or ""
             summary = raw_item.findtext("description") or raw_item.findtext("{http://purl.org/rss/1.0/modules/content/}encoded") or ""
             raw_date = raw_item.findtext("pubDate") or raw_item.findtext("{http://purl.org/dc/elements/1.1/}date") or ""
+            if not matches_source_keywords(source, title, summary):
+                continue
             published_dt, precision = parse_datetime(raw_date, timezone)
             item = create_item(source, title, link, summary=summary, raw_date=raw_date, published_at=published_dt, date_precision=precision)
             if matches_window(item["published_dt"], precision, item["observed_dt"], window):
@@ -481,6 +684,8 @@ def fetch_rss_items(source: dict[str, object], defaults: dict[str, object], wind
                 break
         summary = entry.findtext("atom:summary", default="", namespaces=atom_ns) or entry.findtext("atom:content", default="", namespaces=atom_ns)
         raw_date = entry.findtext("atom:published", default="", namespaces=atom_ns) or entry.findtext("atom:updated", default="", namespaces=atom_ns)
+        if not matches_source_keywords(source, title, summary):
+            continue
         published_dt, precision = parse_datetime(raw_date, timezone)
         item = create_item(source, title, link, summary=summary, raw_date=raw_date, published_at=published_dt, date_precision=precision)
         if matches_window(item["published_dt"], precision, item["observed_dt"], window):
@@ -724,12 +929,14 @@ def fetch_youtube_channel(source: dict[str, object], defaults: dict[str, object]
 
 FETCHERS = {
     "rss": fetch_rss_items,
+    "custom_rss": fetch_rss_items,
     "github_releases": fetch_github_releases,
     "github_trending": fetch_github_trending,
     "google_blog_listing": fetch_google_blog_listing,
     "deepmind_blog": fetch_deepmind_blog,
     "anthropic_newsroom": fetch_anthropic_newsroom,
     "red_anthropic_blog": fetch_red_anthropic_blog,
+    "bilibili_up_videos": fetch_bilibili_up_videos,
     "youtube_channel": fetch_youtube_channel,
 }
 

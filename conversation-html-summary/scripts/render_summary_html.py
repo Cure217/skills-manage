@@ -5,7 +5,10 @@ import argparse
 import datetime as dt
 import html
 import json
+import os
 import re
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -657,6 +660,20 @@ def build_default_output_path(title: str, base_dir_arg: str | None = None) -> Pa
     return target_dir / filename
 
 
+def open_output_file(path: Path) -> None:
+    target = path.resolve()
+    if sys.platform.startswith("win"):
+        opener = getattr(os, "startfile", None)
+        if opener is None:
+            raise RuntimeError("Current Python runtime does not support opening files via os.startfile().")
+        opener(str(target))
+        return
+    if sys.platform == "darwin":
+        subprocess.run(["open", str(target)], check=True)
+        return
+    subprocess.run(["xdg-open", str(target)], check=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Render a conversation summary JSON file into HTML.")
     parser.add_argument("--input", required=True, help="Path to the summary JSON file.")
@@ -664,6 +681,7 @@ def main() -> None:
     parser.add_argument("--base-dir", required=False, help="Base directory for default dated output when --output is omitted.")
     parser.add_argument("--json-output", required=False, help="Optional path to also write/copy the final summary JSON.")
     parser.add_argument("--copy-input-json", action="store_true", help="Also copy the input JSON to the final output directory.")
+    parser.add_argument("--open", action="store_true", help="Open the generated HTML with the system default app.")
     parser.add_argument("--theme", choices=sorted(THEMES), default="dark", help="Color theme.")
     args = parser.parse_args()
 
@@ -686,6 +704,8 @@ def main() -> None:
     print(output_path)
     if json_output_path is not None:
       print(json_output_path)
+    if args.open:
+      open_output_file(output_path)
 
 
 if __name__ == "__main__":
