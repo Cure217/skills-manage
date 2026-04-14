@@ -100,18 +100,21 @@ py -3 scripts/ai_news_digest.py --preset today --format markdown --verbose
 - `B站` = `https://www.bilibili.com/`
 - `V站` = `https://www.v2ex.com/`
 - `L站` = `https://linux.do/`
+- `公众号` = `https://mp.weixin.qq.com/`
 
 当前状态说明：
 
 - `B站`：默认未启用，但已支持两种接入：`custom_rss` 中转模式，或 `bilibili_up_videos` 指定 UP 主直连模式
 - `V站`：已启用，当前使用 `https://www.v2ex.com/feed/tab/tech.xml`
 - `L站`：已启用，当前使用 `https://linux.do/latest.rss`
+- `公众号`：默认未启用，当前支持 `wechat_article_rss` / `wechat_mp_rss` / `custom_rss` 三种 RSS 兼容接入方式；必须配置 RSSHub、WeWe RSS、团队自建中转或其他稳定 RSS/Atom 地址后再启用
 
 说明：
 
 - `B站` 当前支持两种方式：`custom_rss`（RSSHub / API 中转）与 `bilibili_up_videos`（指定 UP 主直连，推荐）
 - `B站` 的直连模式会先抓 UP 主公开视频列表，再调用公开视频详情接口补齐发布时间与简介
 - `V站` 和 `L站` 当前都走 RSS + AI 关键词过滤
+- `公众号` 的 `mp.weixin.qq.com/s/...` 单篇文章链接不是每日 feed，不要直接当成日更来源；应把可维护的公众号 RSS/Atom 输出地址填入 `references/sources.json`
 - 社区来源默认归入“行业热点/讨论”，不作为官方信源
 - 如需进一步提纯，可继续按节点、板块、专属 RSS 或指定 UP 主细分
 
@@ -119,6 +122,7 @@ py -3 scripts/ai_news_digest.py --preset today --format markdown --verbose
 
 - `X(Twitter)`
 - `B站`
+- `公众号`
 - `V站`
 - `L站`
 

@@ -930,6 +930,8 @@ def fetch_youtube_channel(source: dict[str, object], defaults: dict[str, object]
 FETCHERS = {
     "rss": fetch_rss_items,
     "custom_rss": fetch_rss_items,
+    "wechat_article_rss": fetch_rss_items,
+    "wechat_mp_rss": fetch_rss_items,
     "github_releases": fetch_github_releases,
     "github_trending": fetch_github_trending,
     "google_blog_listing": fetch_google_blog_listing,

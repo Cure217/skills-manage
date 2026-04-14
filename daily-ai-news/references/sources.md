@@ -29,6 +29,18 @@
 
 以下别名不是模糊占位，而是固定语义映射：
 
+### 公众号
+
+- 站点：`https://mp.weixin.qq.com/`
+- 默认语义：微信公众号文章
+- 当前状态：默认未启用
+- 当前规则：`mp.weixin.qq.com/s/...` 是单篇文章链接，不是可持续每日抓取的 feed
+- 推荐接入：把 `references/sources.json` 里的 `优秀公众号文章（待配置）` 模板复制或改名，并将 `url` 改成 RSSHub、WeWe RSS、团队自建中转或其他稳定 RSS/Atom 地址
+- 可用抓取器：`wechat_article_rss`、`wechat_mp_rss`、`custom_rss`；三者当前都按 RSS/Atom 解析，并支持 `ai_keywords` 过滤
+- 示例文章：`腾讯技术工程` 的《详尽地带你从零开始设计实现一个AI Agent框架》，单篇链接可用于反推来源与主题，但不能直接作为每日来源
+- 过滤方式：RSS + AI 关键词过滤
+- 限制：无 Cookie / Token / 中转服务时，不保证能稳定枚举某个公众号的历史文章；不要把单篇链接配置成日更来源
+
 ### B站
 
 - 站点：`https://www.bilibili.com/`
@@ -67,8 +79,9 @@
 ## 当前建议
 
 - 如果只是做日常 AI 日报：优先依赖官方源、GitHub、YouTube
-- 如果要把社区声音纳入日报：优先按团队需求补充 `B站 / V站 / L站 / X` 的稳定桥接
+- 如果要把社区声音纳入日报：优先按团队需求补充 `公众号 / B站 / V站 / L站 / X` 的稳定桥接
 - 如果团队内部已经有 RSSHub、代理或 API 中转：优先把地址写进 `references/sources.json`
+- 对公众号，优先使用 RSSHub / WeWe RSS / 自建中转服务输出稳定 RSS/Atom，而不是直接抓 `mp.weixin.qq.com/s/...` 单篇链接
 - 对 B站，优先使用 `bilibili_up_videos` 跟踪指定 AI UP 主，而不是直接抓全站搜索
 
 ## GitHub 重点仓库
