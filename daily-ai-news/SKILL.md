@@ -26,6 +26,7 @@ py -3 scripts/ai_news_digest.py --preset yesterday --format markdown
 py -3 scripts/ai_news_digest.py --date 2026-04-08 --format markdown
 py -3 scripts/ai_news_digest.py --days 3 --format markdown
 py -3 scripts/ai_news_digest.py --start 2026-04-01 --end 2026-04-08 --format json
+py -3 scripts/ai_news_digest.py --days 3 --format markdown --output D:\files\AI_output\AI资讯日报.md
 ```
 
 如果要看详细抓取日志：
@@ -69,6 +70,8 @@ py -3 scripts/ai_news_digest.py --preset today --format markdown --verbose
 - 不要把低可信内容混入高可信栏目
 - 允许某些来源当日无结果，但必须说明原因
 - 允许某些来源因站点限制失败，但必须展示失败原因
+- 除非用户明确要求“精简版 / 摘要版 / 只看重点”，默认应交付脚本生成的完整 Markdown 日报，而不是二次压缩成几条总结
+- 如果用户给出历史日报或参考文件路径，并要求“按这个标准”，先读取参考文件，再保持相同栏目顺序、条目字段、失败来源与风险备注结构
 
 ## 默认来源策略
 
@@ -129,6 +132,22 @@ py -3 scripts/ai_news_digest.py --preset today --format markdown --verbose
 ## 输出要求
 
 默认优先使用 `--format markdown`，输出适合人直接阅读的中文日报。
+
+标准 Markdown 结构应保持：
+
+1. `# AI 资讯日报`
+2. 日期与时区、查询范围、生成时间、去重后资讯数、来源统计
+3. 今日重点结论
+4. 重大模型/产品发布
+5. 官方公告/能力更新
+6. 开源项目/代码趋势
+7. 行业热点/讨论
+8. 低可信/待验证信息
+9. 来源统计
+10. 抓取失败/缺失来源
+11. 风险与备注
+
+需要生成文件时，优先写入用户指定路径；如果未指定，默认写入 `D:\files\AI_output`。可以使用 `--output` 直接落盘，并在最终回复中给出文件路径。
 
 如果用户明确要二次处理或接数据库、自动化流水线，使用：
 

@@ -1,0 +1,7 @@
+interface:
+  display_name: "TAPD PRD Pre Review"
+  short_description: "预审 TAPD/PRD 需求并生成风险问题与评论清单"
+  default_prompt: "Use $tapd-prd-pre-review to review a TAPD or PRD requirement and produce actionable pre-review feedback."
+
+policy:
+  allow_implicit_invocation: true

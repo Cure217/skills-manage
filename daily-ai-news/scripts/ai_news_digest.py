@@ -116,6 +116,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--end", help="结束日期，格式 YYYY-MM-DD。")
     parser.add_argument("--timezone", default="Asia/Shanghai", help="时区，默认 Asia/Shanghai。")
     parser.add_argument("--format", choices=["markdown", "json"], default="markdown", help="输出格式。")
+    parser.add_argument("--output", help="把结果写入指定文件路径；父目录不存在时自动创建。")
     parser.add_argument("--config", default=str(DEFAULT_CONFIG_PATH), help="来源配置文件。")
     parser.add_argument("--limit-per-source", type=int, help="覆盖配置里的单源默认抓取上限。")
     parser.add_argument("--verbose", action="store_true", help="输出抓取日志。")
@@ -1147,6 +1148,18 @@ def render_markdown(report: dict[str, object]) -> str:
     return "\n".join(lines)
 
 
+def serialize_report(report: dict[str, object], output_format: str) -> str:
+    if output_format == "json":
+        return json.dumps(report, ensure_ascii=False, indent=2)
+    return render_markdown(report)
+
+
+def write_output(path: str, text: str) -> None:
+    output_path = Path(path).expanduser()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(text, encoding="utf-8")
+
+
 def main() -> int:
     args = parse_args()
     try:
@@ -1158,10 +1171,10 @@ def main() -> int:
         window = build_query_window(args)
         items, statuses = run_sources(config, window, args)
         report = build_report(items, statuses, window)
-        if args.format == "json":
-            print(json.dumps(report, ensure_ascii=False, indent=2))
-        else:
-            print(render_markdown(report))
+        output_text = serialize_report(report, args.format)
+        if args.output:
+            write_output(args.output, output_text)
+        print(output_text)
         return 0
     except Exception as exc:  # noqa: BLE001
         print(f"[daily-ai-news] ERROR: {exc}", file=sys.stderr)
